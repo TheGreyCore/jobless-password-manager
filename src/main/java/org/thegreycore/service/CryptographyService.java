@@ -1,6 +1,6 @@
-package org.example.service;
+package org.thegreycore.service;
 
-import org.example.config.CryptographyConfig;
+import org.thegreycore.config.CryptographyConfig;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
@@ -67,14 +67,14 @@ public class CryptographyService {
             // Clear the password array
             java.util.Arrays.fill(passwordChars, '\0');
 
-            byte[] iv = getRandomNonce(config.AES_NONCE_LENGTH);
+            byte[] randomNonce = getRandomNonce(config.AES_NONCE_LENGTH);
 
-            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, secretKey, iv);
+            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, secretKey, randomNonce);
             byte[] encryptedMessageByte = cipher.doFinal(plainMessage.getBytes(UTF_8));
 
-            byte[] cipherByte = ByteBuffer.allocate(salt.length + iv.length + encryptedMessageByte.length)
+            byte[] cipherByte = ByteBuffer.allocate(salt.length + randomNonce.length + encryptedMessageByte.length)
                     .put(salt)
-                    .put(iv)
+                    .put(randomNonce)
                     .put(encryptedMessageByte)
                     .array();
             return Base64.getEncoder().encodeToString(cipherByte);

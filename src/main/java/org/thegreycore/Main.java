@@ -1,10 +1,10 @@
-package org.example;
+package org.thegreycore;
 
-import org.example.service.CryptographyService;
+import org.thegreycore.service.CryptographyService;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args){
         String encrypted = CryptographyService.encrypt("This_is_password", "This is not encrypt text");
         System.out.println(encrypted);
         String decrypted = CryptographyService.decrypt(encrypted, "Thisis_password");

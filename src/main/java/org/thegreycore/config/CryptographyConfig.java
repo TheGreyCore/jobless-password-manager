@@ -1,4 +1,4 @@
-package org.example.config;
+package org.thegreycore.config;
 
 
 public class CryptographyConfig {
