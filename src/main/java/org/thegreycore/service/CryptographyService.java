@@ -58,7 +58,7 @@ public class CryptographyService {
      * @return the encrypted message in Base64 encoding
      * @throws RuntimeException if encryption fails
      */
-    public static String encrypt(String password, String plainMessage) {
+    public String encrypt(String password, String plainMessage) {
         try {
             char[] passwordChars = password.toCharArray();
             byte[] salt = generateRandomSalt(config.AES_SALT_LENGTH);
@@ -95,7 +95,7 @@ public class CryptographyService {
      * @return the decrypted plain message
      * @throws RuntimeException if decryption fails
      */
-    public static String decrypt(String cipherContent, String password) {
+    public String decrypt(String password, String cipherContent) {
         try {
             byte[] decode = Base64.getDecoder().decode(cipherContent.getBytes(UTF_8));
             ByteBuffer byteBuffer = ByteBuffer.wrap(decode);
