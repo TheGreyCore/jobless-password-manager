@@ -25,7 +25,7 @@ public class CryptographyService {
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
     private static final CryptographyConfig config = new CryptographyConfig();
     private static final Logger LOGGER = Logger.getLogger(CryptographyService.class.getName());
-    private static final ThreadLocal<SecureRandom> secureRandom = ThreadLocal.withInitial(SecureRandom::new);
+    private static final SecureRandom secureRandom = new SecureRandom();
 
 
     /**
@@ -40,36 +40,30 @@ public class CryptographyService {
         try {
             SecretKeyFactory factory = SecretKeyFactory.getInstance(config.FACTORY_INSTANCE);
             KeySpec spec = new PBEKeySpec(password, salt, config.PBKDF2_ITERATIONS, config.PBKDF2_KEY_LENGTH);
-            // Clear the password array
-            java.util.Arrays.fill(password, '\0');
-
             return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            LOGGER.log(SEVERE, "AES key extraction failed:", e);
-            throw new RuntimeException();
+            LOGGER.log(SEVERE, "AES key extraction failed");
         }
+        return null;
     }
 
     /**
-     * Encrypts a plain message using the given password.
+     * Encrypts a plain message using the given masterKey.
      *
-     * @param password     the password to derive the encryption key from
+     * @param masterKey     the masterKey to derive the encryption key from
      * @param plainMessage the message to encrypt
      * @return the encrypted message in Base64 encoding
      * @throws RuntimeException if encryption fails
      */
-    public String encrypt(String password, String plainMessage) {
+    public String encrypt(char[] masterKey, String plainMessage) {
         try {
-            char[] passwordChars = password.toCharArray();
             byte[] salt = generateRandomSalt(config.AES_SALT_LENGTH);
-            SecretKey secretKey = getAESKeyFromPassword(passwordChars, salt);
-
-            // Clear the password array
-            java.util.Arrays.fill(passwordChars, '\0');
+            SecretKey secretKey = getAESKeyFromPassword(masterKey, salt);
 
             byte[] randomNonce = getRandomNonce(config.AES_NONCE_LENGTH);
 
             Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, secretKey, randomNonce);
+            assert cipher != null;
             byte[] encryptedMessageByte = cipher.doFinal(plainMessage.getBytes(UTF_8));
 
             byte[] cipherByte = ByteBuffer.allocate(salt.length + randomNonce.length + encryptedMessageByte.length)
@@ -79,23 +73,23 @@ public class CryptographyService {
                     .array();
             return Base64.getEncoder().encodeToString(cipherByte);
         } catch (RuntimeException e) {
-            LOGGER.log(SEVERE, "Encryption failed:", e);
+            LOGGER.log(SEVERE, "Encryption failed");
             return null;
         } catch (IllegalBlockSizeException | BadPaddingException e) {
-            LOGGER.log(SEVERE, "Encryption failed:", e);
-            throw new RuntimeException(e);
+            LOGGER.log(SEVERE, "Encryption failed");
         }
+        return null;
     }
 
     /**
-     * Decrypts an encrypted message using the given password.
+     * Decrypts an encrypted message using the given masterKey.
      *
      * @param cipherContent the encrypted message in Base64 encoding
-     * @param password      the password to derive the decryption key from
+     * @param masterKey      the masterKey to derive the decryption key from
      * @return the decrypted plain message
      * @throws RuntimeException if decryption fails
      */
-    public String decrypt(String password, String cipherContent) {
+    public String decrypt(char[] masterKey, String cipherContent) {
         try {
             byte[] decode = Base64.getDecoder().decode(cipherContent.getBytes(UTF_8));
             ByteBuffer byteBuffer = ByteBuffer.wrap(decode);
@@ -109,20 +103,18 @@ public class CryptographyService {
             byte[] content = new byte[byteBuffer.remaining()];
             byteBuffer.get(content);
 
-            char[] passwordChars = password.toCharArray();
-            SecretKey aesKeyFromPassword = getAESKeyFromPassword(passwordChars, salt);
-            java.util.Arrays.fill(passwordChars, '\0');
+            SecretKey aesKeyFromPassword = getAESKeyFromPassword(masterKey, salt);
 
             Cipher cipher = initCipher(Cipher.DECRYPT_MODE, aesKeyFromPassword, iv);
+            assert cipher != null;
             byte[] plainText = cipher.doFinal(content);
             return new String(plainText, UTF_8);
         } catch (AEADBadTagException e) {
-            LOGGER.log(SEVERE, "Decryption failed due to wrong TAG/password:", e);
-            return null;
+            LOGGER.log(SEVERE, "Decryption failed due to wrong masterKey:");
         } catch (IllegalBlockSizeException | BadPaddingException e) {
-            LOGGER.log(SEVERE, "Decryption failed due:", e);
-            throw new RuntimeException(e);
+            LOGGER.log(SEVERE, "Decryption failed due:");
         }
+        return null;
     }
 
     /**
@@ -133,7 +125,7 @@ public class CryptographyService {
      */
     public static byte[] getRandomNonce(int length) {
         byte[] nonce = new byte[length];
-        secureRandom.get().nextBytes(nonce);
+        secureRandom.nextBytes(nonce);
         return nonce;
     }
 
@@ -162,11 +154,10 @@ public class CryptographyService {
             cipher.init(mode, secretKey, new GCMParameterSpec(config.AES_TAG_LENGTH_BITS, nonce));
             return cipher;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
-            LOGGER.log(SEVERE, "Cipher initiation failed:", e);
-            throw new RuntimeException();
+            LOGGER.log(SEVERE, "Cipher initiation failed");
         } catch (InvalidKeyException e) {
-            LOGGER.log(SEVERE, "Invalid key provided:", e);
-            throw new RuntimeException();
+            LOGGER.log(SEVERE, "Invalid key provided");
         }
+        return null;
     }
 }

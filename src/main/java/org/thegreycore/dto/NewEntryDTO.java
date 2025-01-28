@@ -1,4 +1,4 @@
-package org.thegreycore.DTO;
+package org.thegreycore.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,5 +11,5 @@ public class NewEntryDTO {
     private String service;
     private String username;
     private String password;
-    private String masterKey;
+    private char[] masterKey;
 }

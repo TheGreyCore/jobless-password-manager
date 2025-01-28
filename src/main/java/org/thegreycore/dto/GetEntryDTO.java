@@ -1,4 +1,4 @@
-package org.thegreycore.DTO;
+package org.thegreycore.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
