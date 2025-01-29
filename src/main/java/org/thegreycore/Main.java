@@ -83,7 +83,7 @@ public class Main {
         int id = Integer.parseInt(scanner.nextLine());
         try {
             vault.deleteEntry(id);
-        } catch (IllegalArgumentException _) {
+        } catch (IllegalArgumentException ignored) {
             System.out.println("Invalid ID");
         }
     }
