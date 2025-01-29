@@ -49,23 +49,23 @@ public class Main {
 
         System.out.printf("Found vault file: %s %n", f.getAbsolutePath());
         System.out.print("Please provide a master key: ");
-        Scanner scanner = new Scanner(System.in); // Single Scanner instance
+        Scanner scanner = new Scanner(System.in);
         char[] masterKey = scanner.nextLine().toCharArray();
         showListOfEntries(masterKey);
 
         boolean exit = false;
         while (!exit) {
             System.out.println(MENU);
-            String command = scanner.nextLine(); // Read command
+            String command = scanner.nextLine();
             switch (command.toLowerCase()) {
                 case "a", "add":
-                    addEntry(scanner); // Pass scanner to method
+                    addEntry(scanner);
                     break;
                 case "g", "get":
-                    getPassword(scanner); // Pass scanner to method
+                    getPassword(scanner);
                     break;
                 case "r", "remove":
-                    removeEntry();
+                    removeEntry(scanner);
                     break;
                 case "e", "exit":
                     exit = true;
@@ -75,18 +75,23 @@ public class Main {
                     break;
             }
         }
-        scanner.close(); // Close scanner only at the end
+        scanner.close();
     }
 
-    private static void removeEntry() {
-        throw new UnsupportedOperationException();
+    private static void removeEntry(Scanner scanner) {
+        System.out.println("Please provide ID of the entry to remove");
+        int id = Integer.parseInt(scanner.nextLine());
+        try {
+            vault.deleteEntry(id);
+        } catch (IllegalArgumentException _) {
+            System.out.println("Invalid ID");
+        }
     }
 
     private static void showListOfEntries(char[] masterKey) {
         vault.getListOfEntries(masterKey).forEach(System.out::println);
     }
 
-    // Updated methods to reuse the main Scanner
     private static void addEntry(Scanner scanner) {
         System.out.println("Please provide a master key: ");
         char[] masterKey = scanner.nextLine().toCharArray();

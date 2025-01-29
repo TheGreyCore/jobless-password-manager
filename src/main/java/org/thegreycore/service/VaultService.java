@@ -98,20 +98,47 @@ public class VaultService {
      * @see CryptographyService#decrypt(char[], String)
      */
     public String getPassword(char[] masterKey, int id) {
-        try (Connection connection = DriverManager.getConnection(config.VAULT_URL)) {
-            if (connection == null) throw new SQLException("Connection is null");
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "select password from vault where id = ?"
-            )) {
-                stmt.setInt(1, id);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    return cryptographyService.decrypt(masterKey, rs.getString("encrypted_password"));
-                }
+        try (Connection connection = DriverManager.getConnection(config.VAULT_URL);
+             PreparedStatement stmt = connection.prepareStatement(
+                     "select password from vault where id = ?"
+             )) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return cryptographyService.decrypt(masterKey, rs.getString("encrypted_password"));
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error occurred during getting password from database", e);
         }
         return null;
+    }
+
+
+    /**
+     * Deletes an entry from the vault table based on the specified ID.
+     *
+     * @param id The unique identifier of the entry to be deleted. Must be a positive integer
+     *           corresponding to an existing entry.
+     */
+    public void deleteEntry(int id) {
+        if (id <= 0) {
+            String errorMsg = String.format("Invalid ID '%d' - must be a positive integer", id);
+            LOGGER.log(Level.SEVERE, errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+
+        try (Connection connection = DriverManager.getConnection(config.VAULT_URL);
+             PreparedStatement stmt = connection.prepareStatement(
+                     "DELETE FROM vault WHERE id = ?"
+             )) {
+            stmt.setInt(1, id);
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
+                LOGGER.log(Level.WARNING, "No entry found with ID {0} - deletion skipped", id);
+            }
+        } catch (SQLException e) {
+            String errorMsg = String.format("Error deleting entry with ID %d from database", id);
+            LOGGER.log(Level.SEVERE, errorMsg, e);
+        }
     }
 }
