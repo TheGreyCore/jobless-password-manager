@@ -1,5 +1,7 @@
 package org.thegreycore.service;
 
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.thegreycore.config.CryptographyConfig;
 
 import javax.crypto.*;
@@ -15,6 +17,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.logging.Logger;
 
@@ -37,14 +40,22 @@ public class CryptographyService {
      * @throws RuntimeException if key extraction fails
      */
     private static SecretKey getAESKeyFromPassword(char[] password, byte[] salt) {
-        try {
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(config.FACTORY_INSTANCE);
-            KeySpec spec = new PBEKeySpec(password, salt, config.PBKDF2_ITERATIONS, config.PBKDF2_KEY_LENGTH);
-            return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            LOGGER.log(SEVERE, "AES key extraction failed");
-        }
-        return null;
+        if (salt.length != config.AES_SALT_LENGTH) throw new IllegalArgumentException();
+
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+                .withIterations(config.ARGON2_ITERATIONS)
+                .withMemoryAsKB(config.ARGON2_MEMOMORY_LIMIT)
+                .withParallelism(config.ARGON2_PARALLELISM)
+                .withSalt(salt);
+
+        Argon2BytesGenerator generate = new Argon2BytesGenerator();
+        generate.init(builder.build());
+        byte[] result = new byte[config.ARGON2_AES_KEY_LENGTH];
+        generate.generateBytes(password, result, 0, result.length);
+        Arrays.fill(result, (byte) 0);
+
+        return new SecretKeySpec(result, "AES");
     }
 
     /**

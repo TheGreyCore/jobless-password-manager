@@ -100,7 +100,7 @@ public class VaultService {
     public String getPassword(char[] masterKey, int id) {
         try (Connection connection = DriverManager.getConnection(config.VAULT_URL);
              PreparedStatement stmt = connection.prepareStatement(
-                     "select password from vault where id = ?"
+                     "select encrypted_password from vault where id = ?"
              )) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
