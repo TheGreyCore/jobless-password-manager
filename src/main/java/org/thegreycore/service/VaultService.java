@@ -18,7 +18,6 @@ public class VaultService {
 
     /**
      * Adds new entry to vault.
-     *
      * @param entry to be added.
      * @throws RuntimeException if error occurs during adding entry.
      */
