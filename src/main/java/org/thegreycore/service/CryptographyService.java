@@ -6,7 +6,6 @@ import org.thegreycore.config.CryptographyConfig;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -14,8 +13,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
@@ -40,22 +37,25 @@ public class CryptographyService {
      * @throws RuntimeException if key extraction fails
      */
     private static SecretKey getAESKeyFromPassword(char[] password, byte[] salt) {
-        if (salt.length != config.AES_SALT_LENGTH) throw new IllegalArgumentException();
-
-        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
-                .withIterations(config.ARGON2_ITERATIONS)
-                .withMemoryAsKB(config.ARGON2_MEMOMORY_LIMIT)
-                .withParallelism(config.ARGON2_PARALLELISM)
-                .withSalt(salt);
-
-        Argon2BytesGenerator generate = new Argon2BytesGenerator();
-        generate.init(builder.build());
         byte[] result = new byte[config.ARGON2_AES_KEY_LENGTH];
-        generate.generateBytes(password, result, 0, result.length);
-        Arrays.fill(result, (byte) 0);
+        try {
+            if (salt.length != config.AES_SALT_LENGTH) throw new IllegalArgumentException();
 
-        return new SecretKeySpec(result, "AES");
+            Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                    .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+                    .withIterations(config.ARGON2_ITERATIONS)
+                    .withMemoryAsKB(config.ARGON2_MEMOMORY_LIMIT)
+                    .withParallelism(config.ARGON2_PARALLELISM)
+                    .withSalt(salt);
+
+            Argon2BytesGenerator generate = new Argon2BytesGenerator();
+            generate.init(builder.build());
+            generate.generateBytes(password, result, 0, result.length);
+
+            return new SecretKeySpec(result, "AES");
+        } finally {
+            Arrays.fill(result, (byte) 0);
+        }
     }
 
     /**
@@ -83,13 +83,10 @@ public class CryptographyService {
                     .put(encryptedMessageByte)
                     .array();
             return Base64.getEncoder().encodeToString(cipherByte);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | IllegalBlockSizeException | BadPaddingException e) {
             LOGGER.log(SEVERE, "Encryption failed");
             return null;
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
-            LOGGER.log(SEVERE, "Encryption failed");
         }
-        return null;
     }
 
     /**
@@ -115,8 +112,8 @@ public class CryptographyService {
             byteBuffer.get(content);
 
             SecretKey aesKeyFromPassword = getAESKeyFromPassword(masterKey, salt);
-
             Cipher cipher = initCipher(Cipher.DECRYPT_MODE, aesKeyFromPassword, iv);
+
             assert cipher != null;
             byte[] plainText = cipher.doFinal(content);
             return new String(plainText, UTF_8);

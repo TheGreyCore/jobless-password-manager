@@ -6,7 +6,6 @@ import org.thegreycore.config.VaultConfig;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,19 +23,19 @@ public class VaultService {
      * @throws RuntimeException if error occurs during adding entry.
      */
     public void addEntry(NewEntryDTO entry) {
-        try (Connection connection = DriverManager.getConnection(config.VAULT_URL)) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "insert into vault (encrypted_service, encrypted_username, encrypted_password) values (?, ?, ?)"
-            )) {
-                stmt.setString(1, cryptographyService.encrypt(entry.getMasterKey(), entry.getService()));
-                stmt.setString(2, cryptographyService.encrypt(entry.getMasterKey(), entry.getUsername()));
-                stmt.setString(3, cryptographyService.encrypt(entry.getMasterKey(), entry.getPassword()));
-                stmt.executeUpdate();
-            } finally {
-                entry.setMasterKey(null);
-            }
+        try (Connection connection = DriverManager.getConnection(config.VAULT_URL);
+             PreparedStatement stmt = connection.prepareStatement(
+                     "insert into vault (encrypted_service, encrypted_username, encrypted_password) values (?, ?, ?)"
+             )) {
+            stmt.setString(1, cryptographyService.encrypt(entry.getMasterKey(), entry.getService()));
+            stmt.setString(2, cryptographyService.encrypt(entry.getMasterKey(), entry.getUsername()));
+            stmt.setString(3, cryptographyService.encrypt(entry.getMasterKey(), entry.getPassword()));
+            stmt.executeUpdate();
+
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error occurred during adding entry to database");
+        } finally {
+            entry.setMasterKey(null);
         }
     }
 
@@ -109,6 +108,8 @@ public class VaultService {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error occurred during getting password from database", e);
+        } finally {
+            java.util.Arrays.fill(masterKey, '\0');
         }
         return null;
     }

@@ -6,11 +6,9 @@ import org.thegreycore.service.VaultService;
 
 import java.io.File;
 import java.util.Scanner;
-import java.util.logging.Logger;
 
 public class Main {
     public static final VaultService vault = new VaultService();
-    public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
 
     private static final String LOGO = """
                    ______  ____  __    ________________   \s
@@ -108,9 +106,5 @@ public class Main {
         System.out.println("Enter master key:");
         char[] masterKey = scanner.nextLine().toCharArray();
         System.out.println(vault.getPassword(masterKey, id));
-    }
-
-    public static void insertTestData() {
-        vault.addEntry(new NewEntryDTO("Youtube", "test", "123123", "masterKey".toCharArray()));
     }
 }
