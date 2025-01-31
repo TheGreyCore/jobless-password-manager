@@ -19,7 +19,7 @@ See Critical Security Considerations for more information.
 ---
 
 ## Description  
-This is a more than basic password manager prototype in Java.
+This is a more than basic local password manager prototype in Java.
 
 This project's scope is to create a "well-secured" password manager using modern recommendations. The development of this project is still ongoing, so a big part of the functionality is not implemented yet.
 
