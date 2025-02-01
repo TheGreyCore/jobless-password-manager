@@ -46,7 +46,7 @@ This implementation has **NOT** been audited or tested rigorously. Known/potenti
 - [x] CLI user interface
 - [ ] Code testing
 - [ ] Password policy
-- [    ] MFA implementation
+- [ ] MFA implementation
 - [ ] Better UI / Browser extension
 
 *This is a basic roadmap, some points may be skipped or changed in the near future!*
